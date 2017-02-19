@@ -16,7 +16,7 @@ def pass2hash(password):
 
 conf_dir = os.path.join(os.environ.get("HOME"), ".mcsesame")
 
-if len(sys.argv) >= 1 and sys.argv[1] == "install":
+if len(sys.argv) >= 1 and sys.argv[1] in ["build", "install"]:
 
     print("Preparing for setup")
 
