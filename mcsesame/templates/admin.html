@@ -1,0 +1,75 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="sides">
+    <div class="left">
+      <img src='./files/mossy.png'/>
+    </div>
+    <div class="right">
+        <h1>Benutzerverwaltung</h1>
+        {% if error %}
+            <p style="color: red;">{{ error }}</p>
+        {% endif %}
+        <form name="useredit" action="admin" method="POST">
+            <table>
+                <thead>
+                    <td width="180" class="usertable">Login</td>
+                    <td width="180">Passwort</td>
+                    <td width="180">MC user</td>
+                    <td width="50">Admin</td>
+                    <td width="100">Aktion</td>
+                </thead>
+            {% for u in users %}
+                <tr>
+                    <td>{{ u.login }}</td>
+                    <td>-hashed-</td>
+                    <td>{{ u.mcuser }}</td>
+                    <td>
+                        {% if u.admin %}
+                            Ja
+                        {% else %}
+                            Nein
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="?l={{ u.login }}&a=dl">Löschen</a><br/>
+                        <a href="?l={{ u.login }}&a=ed">Bearbeiten</a>
+                    </td>
+                </tr>
+            {% endfor %}
+            {% if edit_user %}
+                <tr class="editbox">
+                    <td>
+                        <input type="hidden" name="login" id="login" value="{{ edit_user.login }}"/>
+                        {{ edit_user.login }}
+                    </td>
+                    <td><input type="password" name="password" id="password"/></td>
+                    <td><input type="text" name="mcuser" id="mcuser" value="{{ edit_user.mcuser }}"/></td>
+                    <td><input type="checkbox" name="admin" id="admin"
+                               {%if edit_user.admin %}checked{% endif %}/></td>
+                    <td>
+                        <a href="/admin">Abbrechen</a><br/>
+                        <a href="javascript:document.useredit.submit()">Speichern</a>
+                    </td>
+                </tr>
+            </table>
+            {% elif new_user %}
+                <tr class="editbox">
+                    <td><input type="text" name="login" id="login" value="{{ new_user.login }}"/></td>
+                    <td><input type="password" name="password" id="password""/></td>
+                    <td><input type="text" name="mcuser" id="mcuser" value="{{ new_user.mcuser }}"/></td>
+                    <td><input type="checkbox" name="admin" id="admin"
+                               {%if new_user.admin %}checked{% endif %}/></td>
+                    <td>
+                        <a href="/admin">Abbrechen</a><br/>
+                        <a href="javascript:document.useredit.submit()">Speichern</a>
+                    </td>
+                </tr>
+            </table>
+            {% else %}
+            </table>
+            <p><a href="?a=nw">Neuen Benutzer anlegen</a></p>
+            {% endif %}
+        </form>
+    </div>
+</div>
+{% endblock %}

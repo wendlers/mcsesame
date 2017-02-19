@@ -1,0 +1,1 @@
+CONF_DIR = '/home/stefan/.mcsesame'

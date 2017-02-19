@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>MC Sesame</title>
+    <style>
+        body {
+            margin: 0px;
+            padding: 0px;
+            font-family: sans-serif;
+        }
+        a {
+            text-decoration: none;
+        }
+        a:link, a:visited {
+            color: black;
+        }
+        a:hover {
+            color: green;
+        }
+        .sides {
+            margin: 0;
+        }
+        .left {
+            float:left;
+            padding-left: 50px;
+            width: 300px;
+            overflow: hidden;
+        }
+        .right {
+            float: left;
+            margin-top: 25px;
+            margin-left: 25px;
+            overflow: hidden;
+        }
+        .header {
+            background-image: url("./files/stone.jpg");
+            background-repeat: repeat-x;
+            height: 90px;
+        }
+        .menu {
+            margin-bottom: 90px;
+            margin-left: 60px;
+        }
+        .menuitem {
+            font-weight: bold;
+            float:left;
+            background-image: url("./files/sign.jpg");
+            height: 30px;
+            width: 150px;
+            text-align: center;
+            padding-top: 5px;
+            margin-left: 5px;
+            margin-right: 5px;
+        }
+        thead {
+            font-weight: bold;
+            background: lightgreen;
+        }
+        td {
+            padding: 5px;
+        }
+        .editbox {
+            background: lightgray;
+        }
+    </style>
+</head>
+<body>
+<div class="header">
+</div>
+<div class="menu">
+    {% if message %}
+        <div class="menuitem"><a href="/">Zurück</a></div>
+    {% endif %}
+    {% if mcuser %}
+        <div class="menuitem"><a href="/logout">Abmelden</a></div>
+        <div class="menuitem"><a href="/passwd">Passwort</a></div>
+        {% if is_admin == 1 %}
+            <div class="menuitem"><a href="/admin">Admin</a></div>
+        {% endif %}
+    {% endif %}
+</div>
+{% block content %}{% endblock %}
+</body>
+</html>

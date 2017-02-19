@@ -1,0 +1,9 @@
+#!./venv/bin/python
+
+from mcsesame.sesame import main
+
+try:
+    main()
+except Exception as e:
+    sys.stderr.write(str(e) + "\n")
+    exit(1)

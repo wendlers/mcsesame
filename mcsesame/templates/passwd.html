@@ -1,0 +1,28 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="sides">
+    <div class="left">
+      <img src='./files/mossy.png'/>
+    </div>
+    <div class="right">
+        <h1>Passwort ändern</h1>
+        {% if error %}
+            <p style="color: red;">{{ error }}</p>
+        {% endif %}
+        {% if success %}
+            <p style="color: green;">Passwort erfolgreich geändert!</p>
+            <p><a href="/">zurück</a></p>
+        {% else %}
+        <form name="passchange" action="passwd" method="POST">
+            <div>
+                <input type="hidden" name="login" id="login" value="{{ login }}"/>
+                <p></p><input type="password" name="password" id="password"/><p>
+            </div>
+            <div>
+                <input type="submit" name="submit"/>
+            </div>
+        </form>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

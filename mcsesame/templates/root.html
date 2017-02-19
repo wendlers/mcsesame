@@ -1,0 +1,24 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="sides">
+    <div class="left">
+      <img src='./files/mossy.png'/>
+    </div>
+    <div class="right">
+        <h1>IP: {{ remote_addr }} / {{ mcuser }}</h1>
+        <p><span style="font-weight: bold;">Server:</span>
+            {% if mcs_data.version %}
+                kaltpost.de:25565 ({{ mcs_data.version }})
+            {% else %}
+                offline
+            {% endif %}
+        </p>
+        <p><span style="font-weight: bold;">Spieler online:</span></p>
+        <ul>
+        {% for p in mcs_data.players %}
+            <li>{{ p.name }}</li>
+        {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock %}
