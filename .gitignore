@@ -89,3 +89,6 @@ ENV/
 .ropeproject
 mcsesame/confdir.py
 .idea
+venv/
+users.db
+ssl.*
