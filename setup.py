@@ -6,7 +6,6 @@ import hashlib
 import subprocess
 
 from mcsesame import version
-from mcsesame import persistence
 from distutils.core import setup
 
 
@@ -65,6 +64,8 @@ def createconfdir():
 
 
 def createdb():
+
+    from mcsesame import persistence
 
     if not os.path.exists("users.db"):
 
