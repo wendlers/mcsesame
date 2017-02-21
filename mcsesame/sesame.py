@@ -126,13 +126,7 @@ def daemon():
 
 def main():
 
-    sudo.run_as_root()
-
-    '''
-    if not sudo.running_as_root():
-        print("Must be run with root privileges!")
-        exit(1)
-    '''
+    # sudo.run_as_root()
 
     parser = configargparse.ArgParser(default_config_files=[os.path.join(config.CONF_DIR, 'sesame.ini')])
 

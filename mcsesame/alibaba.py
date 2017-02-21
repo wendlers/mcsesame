@@ -5,6 +5,7 @@ import flask
 import configargparse
 import hashlib
 
+import sudo
 import config
 import version
 import persistence
@@ -12,6 +13,8 @@ import gatekeeper
 
 from flask import Flask, render_template, send_from_directory
 from daemons import daemonizer
+
+logger = logging.getLogger(__name__)
 
 
 def pass2hash(password):
@@ -24,14 +27,37 @@ class App:
     class LoginUser(flask_login.UserMixin):
         pass
 
-    def __init__(self, httpport, nossl, ssl_cert, ssl_key, database):
+    def __init__(self, httpport, nossl, ssl_cert, ssl_key, database, user_name):
 
+        self.database = database
+        self.user_name = user_name
         self.httpport = httpport
         self.nossl = nossl
         self.ssl_cert = ssl_cert
         self.ssl_key = ssl_key
 
-        self.pm = persistence.PersistenceManager(database)
+        try:
+
+            flist = [self.ssl_cert, self.ssl_key]
+
+            if self.database.startswith("sqlite:///"):
+
+                dbpath = self.database[len("sqlite:///"):]
+                dbdir = os.path.dirname(dbpath)
+
+                flist.append(dbpath)
+                flist.append(dbdir)
+
+            sudo.drop_privileges(self.user_name, flist)
+
+            logging.info("Dropped privileges to user '%s'" % self.user_name)
+
+        except KeyError:
+
+            logger.warn("User '%s' not found - not dropping privileges!" % self.user_name)
+
+        self.pm = persistence.PersistenceManager(self.database)
+        self.gk = gatekeeper.GateKeeper()
 
         self.app = Flask(__name__)
         self.app.secret_key = '98s7ad=)$Djguiu87g'
@@ -50,8 +76,6 @@ class App:
         self.login_manager.user_loader(self.user_loader)
         self.login_manager.request_loader(self.request_loader)
         self.login_manager.unauthorized_handler(self.unauthorized_handler)
-
-        self.gk = gatekeeper.GateKeeper()
 
     def user_loader(self, login):
 
@@ -266,34 +290,34 @@ class App:
                                error=error)
 
     def files(self, path):
-        print(path)
         return send_from_directory('files', path)
 
 
-def foreground(httpport, nossl, ssl_cert, ssl_key, database):
+def foreground(httpport, nossl, ssl_cert, ssl_key, database, user):
 
-    logging.info('MCSesame - Alibaba v%s started' % version.FULL)
+    logger.info('MCSesame - Alibaba v%s started' % version.FULL)
 
     try:
 
-        ali = App(httpport, nossl, ssl_cert, ssl_key, database)
+        ali = App(httpport, nossl, ssl_cert, ssl_key, database, user)
         ali.run()
 
     except OSError as e:
-        logging.warning(e)
+        logger.warning(e)
         exit(1)
     except Exception as e:
-        logging.critical(e)
+        logger.critical(e)
         exit(1)
 
-
 @daemonizer.run(pidfile=config.PID_ALIBABA)
-def daemon(httpport, nosssl, ssl_cert, ssl_key, database):
+def daemon(httpport, nosssl, ssl_cert, ssl_key, database, user):
 
-    foreground(httpport, nosssl, ssl_cert, ssl_key, database)
+    foreground(httpport, nosssl, ssl_cert, ssl_key, database, user)
 
 
 def main():
+
+    # sudo.run_as_root()
 
     parser = configargparse.ArgParser(default_config_files=[
         os.path.join(config.CONF_DIR, 'alibaba.ini')])
@@ -320,6 +344,8 @@ def main():
 
     parser.add_argument("--nossl", help="don't use SSL",
                         action="store_true", default=False)
+
+    parser.add_argument("--user", help="User under which to run this app", default="mcserver")
 
     args = parser.parse_args()
 
@@ -350,13 +376,15 @@ def main():
                    args.nossl,
                    args.sslcert,
                    args.sslkey,
-                   args.database)
+                   args.database,
+                   args.user)
     else:
         daemon(args.httpport,
                args.nossl,
                args.sslcert,
                args.sslkey,
-               args.database)
+               args.database,
+               args.user)
 
 
 if __name__ == "__main__":

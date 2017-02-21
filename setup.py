@@ -3,10 +3,17 @@
 import os
 import sys
 import hashlib
+import subprocess
 
 from mcsesame import version
 from mcsesame import persistence
 from distutils.core import setup
+
+
+if os.getuid() == 0:
+    conf_dir = os.path.join(os.path.sep, "etc", "mcsesame")
+else:
+    conf_dir = os.path.join(os.environ.get("HOME"), ".mcsesame")
 
 
 def pass2hash(password):
@@ -14,14 +21,50 @@ def pass2hash(password):
     return d.hexdigest()
 
 
-conf_dir = os.path.join(os.environ.get("HOME"), ".mcsesame")
+def createini():
 
-if len(sys.argv) >= 1 and sys.argv[1] in ["build", "install"]:
+    with open("alibaba.ini", "w") as f:
 
-    print("Preparing for setup")
+        if os.getuid() == 0:
+            f.write("logfile = /var/log/alibaba.log")
+        else:
+            f.write("logfile = %s/alibaba.log" % conf_dir)
+
+    with open("sesame.ini", "w") as f:
+
+        if os.getuid() == 0:
+            f.write("logfile = /var/log/sesame.log")
+        else:
+            f.write("logfile = %s/sesame.log" % conf_dir)
+
+    print("Created ini files")
+
+
+def createcert():
+
+    if not os.path.exists("ssl.key") or not os.path.exists("ssl.crt"):
+
+        host = os.environ.get("HOSTNAME", "localhost")
+
+        retcode = subprocess.call(['openssl', 'req', '-x509', '-newkey', 'rsa:4096', '-keyout', 'ssl.key',  '-out',
+                                   'ssl.crt', '-days', '365',  '-nodes',  '-subj',  ""'/CN=%s'"" % host])
+
+        if retcode != 0:
+            print("Failed to create ssl devcert for %s!" % host)
+            exit(retcode)
+
+        print("Created ssl devcert for: %s" % host)
+
+
+def createconfdir():
 
     with open("mcsesame/confdir.py", "w") as f:
         f.write("CONF_DIR = '%s'" % conf_dir)
+
+    print("Created mcsesame/confdir.py")
+
+
+def createdb():
 
     if not os.path.exists("users.db"):
 
@@ -43,16 +86,16 @@ if len(sys.argv) >= 1 and sys.argv[1] in ["build", "install"]:
 
         print("Created users db")
 
-    if not os.path.exists("ssl.key") or not os.path.exists("ssl.crt"):
 
-        from werkzeug.serving import make_ssl_devcert
+if len(sys.argv) >= 1 and sys.argv[1] in ["build", "install"]:
 
-        host = os.environ.get("HOSTNAME", "localhost")
-        print("Creating ssl devcert for: %s" % host)
+    print("Preparing for setup")
 
-        ret = make_ssl_devcert('ssl', host=host)
+    createconfdir()
+    createini()
+    createdb()
+    createcert()
 
-        print("Created: %s, %s" % ret)
 
 setup(name='mcsesame',
       version=version.FULL,
@@ -68,7 +111,6 @@ setup(name='mcsesame',
           "posix_ipc (>=1.0.0)",
           "SQLAlchemy (>=1.1.5)",
           "thrift (>=0.10.0)",
-          "pyOpenSSL (>=16.2.0)"
         ],
       packages=['mcsesame', 'SwiftApi'],
       package_data={'mcsesame': ['templates/*', 'files/*']},

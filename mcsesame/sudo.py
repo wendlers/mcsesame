@@ -1,7 +1,6 @@
 import os
 import sys
 import pwd
-import grp
 
 
 def running_as_root():
@@ -24,13 +23,15 @@ def run_as_root():
             sys.exit(1)
 
 
-def drop_privileges():
+def drop_privileges(user_name, chfperm=[]):
 
     if os.getuid() != 0:
-        return
+        return 0, 0
 
-    user_name = os.getenv("SUDO_USER")
     pwnam = pwd.getpwnam(user_name)
+
+    for f in chfperm:
+        os.chown(f, pwnam.pw_uid, pwnam.pw_gid)
 
     os.setgroups([])
 
@@ -38,3 +39,5 @@ def drop_privileges():
     os.setuid(pwnam.pw_uid)
 
     os.umask(0o22)
+
+    return pwnam.pw_uid, pwnam.pw_gid

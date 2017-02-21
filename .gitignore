@@ -92,3 +92,4 @@ mcsesame/confdir.py
 venv/
 users.db
 ssl.*
+*.ini
