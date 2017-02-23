@@ -27,7 +27,7 @@ class App:
     class LoginUser(flask_login.UserMixin):
         pass
 
-    def __init__(self, httpport, nossl, ssl_cert, ssl_key, database, user_name):
+    def __init__(self, httpport, nossl, ssl_cert, ssl_key, database, user_name, player_timeout):
 
         self.database = database
         self.user_name = user_name
@@ -57,7 +57,7 @@ class App:
             logger.warn("User '%s' not found - not dropping privileges!" % self.user_name)
 
         self.pm = persistence.PersistenceManager(self.database)
-        self.gk = gatekeeper.GateKeeper()
+        self.gk = gatekeeper.GateKeeper(player_timeout)
 
         self.app = Flask(__name__)
         self.app.secret_key = '98s7ad=)$Djguiu87g'
@@ -293,13 +293,13 @@ class App:
         return send_from_directory('files', path)
 
 
-def foreground(httpport, nossl, ssl_cert, ssl_key, database, user):
+def foreground(httpport, nossl, ssl_cert, ssl_key, database, user, player_timeout):
 
     logger.info('MCSesame - Alibaba v%s started' % version.FULL)
 
     try:
 
-        ali = App(httpport, nossl, ssl_cert, ssl_key, database, user)
+        ali = App(httpport, nossl, ssl_cert, ssl_key, database, user, player_timeout)
         ali.run()
 
     except OSError as e:
@@ -310,9 +310,9 @@ def foreground(httpport, nossl, ssl_cert, ssl_key, database, user):
         exit(1)
 
 @daemonizer.run(pidfile=config.PID_ALIBABA)
-def daemon(httpport, nosssl, ssl_cert, ssl_key, database, user):
+def daemon(httpport, nosssl, ssl_cert, ssl_key, database, user, player_timeout):
 
-    foreground(httpport, nosssl, ssl_cert, ssl_key, database, user)
+    foreground(httpport, nosssl, ssl_cert, ssl_key, database, user, player_timeout)
 
 
 def main():
@@ -347,6 +347,9 @@ def main():
 
     parser.add_argument("--user", help="User under which to run this app", default="mcserver")
 
+    parser.add_argument("--playertimeout", help="Player inactivity timeout (will be multiplied by 10sec)",
+                        type=int, default=12)
+
     args = parser.parse_args()
 
     # daemon ctrl
@@ -377,14 +380,16 @@ def main():
                    args.sslcert,
                    args.sslkey,
                    args.database,
-                   args.user)
+                   args.user,
+                   args.playertimeout)
     else:
         daemon(args.httpport,
                args.nossl,
                args.sslcert,
                args.sslkey,
                args.database,
-               args.user)
+               args.user,
+               args.playertimeout)
 
 
 if __name__ == "__main__":

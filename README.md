@@ -18,6 +18,17 @@ be removed from the whitelist.
 User with the ``admin`` flag are allowed to add/remove/change users via the web frontend. 
 Furthermore, users with ``admin`` flag will be made Ops in the MCServer.
 
+## Component Diagram
+
+The figure below shows the main components of MC Sesame:
+
+![components](./doc/uml/mcsesame_components.png "MC Sesame Component Diagram")
+
+Since changing IPTables needs root rights, but it is not a a good idea (in terms of security)
+to run the web serving part (alibaba) with root rights, MC Sesame needs a second daemon, ``sesame``.
+Its only purpose is to listen via posix IPC message queue to commands from ``alibaba`` and add or 
+remove an IP from/to the IPTables. 
+
 ## Prerequisites
 
 The ``openssl`` command is needed to create the SSL devcert. On Ubuntu/Debian it could
@@ -26,7 +37,7 @@ be added with:
     sudo apt install openssl
 
 Also a [craftbukkit](https://getbukkit.org/craftbukkit) server with 
-[SwiftApi](https://dev.bukkit.org/projects/swiftapi) plugin running 
+[SwiftApi](https://dev.bukkit.org/projects/swiftapi) (v1.7) plugin running 
 on the same machine as MCSesame is needed.
 
 ## Install System Wide

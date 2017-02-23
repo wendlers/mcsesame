@@ -69,15 +69,13 @@
 <div class="header">
 </div>
 <div class="menu">
-    {% if message %}
-        <div class="menuitem"><a href="/">Zurück</a></div>
-    {% endif %}
+    <div class="menuitem"><a href="/">Home</a></div>
     {% if mcuser %}
-        <div class="menuitem"><a href="/logout">Abmelden</a></div>
         <div class="menuitem"><a href="/passwd">Passwort</a></div>
         {% if is_admin == 1 %}
             <div class="menuitem"><a href="/admin">Admin</a></div>
         {% endif %}
+        <div class="menuitem"><a href="/logout">Abmelden</a></div>
     {% endif %}
 </div>
 {% block content %}{% endblock %}

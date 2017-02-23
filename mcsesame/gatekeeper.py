@@ -10,10 +10,11 @@ logger = logging.getLogger(__name__)
 
 class GateKeeper(threading.Thread):
 
-    def __init__(self):
+    def __init__(self, player_timeout=10):
 
         threading.Thread.__init__(self)
 
+        self.player_timeout = player_timeout
         self.mcs = mcserver.McServer()
         self.running = False
 
@@ -34,7 +35,7 @@ class GateKeeper(threading.Thread):
                 logger.info("made %s an operator" % mcuser)
 
             self.mq.send_open(remote_addr)
-            self.sesame_open_for[mcuser] = {"remote_addr": remote_addr, "timeout": 6}
+            self.sesame_open_for[mcuser] = {"remote_addr": remote_addr, "timeout": self.player_timeout}
 
             logger.info("opened sesame for: %s (%s)" % (mcuser, remote_addr))
 
@@ -84,10 +85,8 @@ class GateKeeper(threading.Thread):
                 if not self.mcs.is_connected:
                     logger.info("Trying to connect to MC server")
 
-                    if not self.mcs.open():
-                        continue
-
-                    logger.info("Connected")
+                    if self.mcs.open():
+                        logger.info("Connected")
 
                 if self.mcs.is_connected:
 
@@ -103,7 +102,7 @@ class GateKeeper(threading.Thread):
 
                     self.mcs_data["players"] = p
 
-            except Exception:
+            except:
 
                 self.mcs_data = {"version": None, "players": []}
                 self.mcs.close()
@@ -135,7 +134,7 @@ class GateKeeper(threading.Thread):
                 else:
 
                     logger.info("user with %s (%s) passed check!" % (mcuser, data["remote_addr"]))
-                    data["timeout"] = 6
+                    data["timeout"] = self.player_timeout
 
             for mcuser in remove_users:
                 self.mcs.whitelist_del(mcuser)

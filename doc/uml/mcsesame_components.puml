@@ -1,0 +1,30 @@
+@startuml
+
+package "Client" {
+    [MC Client] --> src
+    [Browser] --> https
+}
+
+package "Server" {
+    package "craftbukkit" {
+        thrift - [SwiftApi]
+        dst - [Server]
+
+    }
+    package "MCSesame" {
+        https - [alibaba]
+        [alibaba] --> thrift
+        [alibaba] --> mqueue
+        mqueue - [sesame]
+        [sesame] <<privileged>>
+        [sesame] --> allow_deny
+    }
+    package "Linux" {
+        [iptables] <<privileged>>
+        allow_deny - [iptables]
+        dst - [iptables]
+        src - [iptables]
+    }
+}
+
+@enduml
