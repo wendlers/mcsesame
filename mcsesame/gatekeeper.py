@@ -48,7 +48,8 @@ class GateKeeper(threading.Thread):
 
             self.mcs.whitelist_del(mcuser)
             self.mcs.op_del(mcuser)
-            self.mcs.kick(mcuser)
+            # Causes server to crash every now and then
+            # self.mcs.kick(mcuser)
 
             self.mq.send_close(self.sesame_open_for[mcuser]["remote_addr"])
 
