@@ -70,7 +70,7 @@
 </div>
 <div class="menu">
     <div class="menuitem"><a href="/">Home</a></div>
-    {% if mcuser %}
+    {% if is_auth %}
         <div class="menuitem"><a href="/passwd">Passwort</a></div>
         {% if is_admin == 1 %}
             <div class="menuitem"><a href="/admin">Admin</a></div>

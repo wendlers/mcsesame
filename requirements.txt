@@ -4,4 +4,4 @@ Flask>=0.12
 Flask_Login>=0.4.0
 posix_ipc>=1.0.0
 SQLAlchemy>=1.1.5
-thrift>=0.10.0
+

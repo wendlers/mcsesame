@@ -1,5 +1,5 @@
 
-import config
+import hashlib
 
 from sqlalchemy import Column, String, Boolean
 from sqlalchemy.ext.declarative import declarative_base
@@ -17,7 +17,6 @@ class User(Base):
 
     login = Column(String(64), primary_key=True)
     passwd = Column(String(64), nullable=False)
-    mcuser = Column(String(64), nullable=False)
     admin = Column(Boolean, default=False)
 
 
@@ -59,14 +58,12 @@ class PersistenceManager:
     def get_all_users(self):
         return self.db_session.query(User).all()
 
+
 if __name__ == "__main__":
 
     pm = PersistenceManager("sqlite:///../users.db")
 
-    '''
     pm.create_all()
-    pm.add_user(User(login="stefan", passwd="papa", mcuser="brickolage", admin=True))
-    pm.add_user(User(login="aime", passwd="harry", mcuser="AimZocker2005", admin=False))
-    pm.add_user(User(login="annie", passwd="pony", mcuser="AnnieLikeABoss", admin=False))
-    '''
+    pm.add_user(User(login="admin", passwd=hashlib.sha1("admin").hexdigest(), admin=True))
+
     print(pm.get_all_users())

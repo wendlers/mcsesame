@@ -2,7 +2,6 @@ import logging
 
 import threading
 import time
-import mcserver
 import ipc
 
 logger = logging.getLogger(__name__)
@@ -10,55 +9,39 @@ logger = logging.getLogger(__name__)
 
 class GateKeeper(threading.Thread):
 
-    def __init__(self, player_timeout=10):
+    def __init__(self, player_timeout=30):
 
         threading.Thread.__init__(self)
 
         self.player_timeout = player_timeout
-        self.mcs = mcserver.McServer()
         self.running = False
 
-        self.mcs_data = {"version": None, "players": []}
         self.sesame_open_for = {}
 
         self.mq = ipc.MessageQueue()
         self.daemon = True
 
-    def open_sesame_for(self, mcuser, remote_addr, admin=False):
+    def open_sesame_for(self, remote_addr):
 
-        if mcuser not in self.sesame_open_for:
-
-            self.mcs.whitelist_add(mcuser)
-
-            if admin:
-                self.mcs.op_add(mcuser)
-                logger.info("made %s an operator" % mcuser)
+        if remote_addr not in self.sesame_open_for:
 
             self.mq.send_open(remote_addr)
-            self.sesame_open_for[mcuser] = {"remote_addr": remote_addr, "timeout": self.player_timeout}
 
-            logger.info("opened sesame for: %s (%s)" % (mcuser, remote_addr))
+        self.sesame_open_for[remote_addr] = {"timeout": self.player_timeout}
+        logger.info("opened sesame for: %s" % remote_addr)
 
-        else:
-            logger.info("sesame already open for: %s (%s)" % (mcuser, remote_addr))
+    def close_sesame_for(self, remote_addr):
 
-    def close_sesame_for(self, mcuser):
+        if remote_addr in self.sesame_open_for:
 
-        if mcuser in self.sesame_open_for:
+            self.mq.send_close(remote_addr)
 
-            self.mcs.whitelist_del(mcuser)
-            self.mcs.op_del(mcuser)
-            # Causes server to crash every now and then
-            # self.mcs.kick(mcuser)
+            logger.info("sesame closed for: %s" % remote_addr)
 
-            self.mq.send_close(self.sesame_open_for[mcuser]["remote_addr"])
-
-            logger.info("sesame closed for: %s (%s)" % (mcuser, self.sesame_open_for[mcuser]["remote_addr"]))
-
-            del self.sesame_open_for[mcuser]
+            del self.sesame_open_for[remote_addr]
 
         else:
-            logger.info("already logged out: %s" % mcuser)
+            logger.info("already closed for: %s" % remote_addr)
 
     def stop(self):
 
@@ -81,68 +64,19 @@ class GateKeeper(threading.Thread):
 
             logger.info("wake-up for player check")
 
-            try:
+            for remote_addr, data in self.sesame_open_for.items():
 
-                if not self.mcs.is_connected:
-                    logger.info("Trying to connect to MC server")
+                logger.info("checking: %s" % remote_addr)
 
-                    if self.mcs.open():
-                        logger.info("Connected")
+                data["timeout"] -= 1
 
-                if self.mcs.is_connected:
+                logger.info("timeout for %s is now: %d" %
+                            (remote_addr, data["timeout"]))
 
-                    if self.mcs_data["version"] is None:
-                        self.mcs_data["version"] = self.mcs.get_version()
+                if data["timeout"] == 0:
+                    logger.info("%s has timed out" % remote_addr)
+                    self.close_sesame_for(remote_addr)
 
-                    p = self.mcs.get_players()
-
-                    if p is None:
-                        logger.warn("Lost connection to MC server")
-                        self.mcs.close()
-                        continue
-
-                    self.mcs_data["players"] = p
-
-            except:
-
-                self.mcs_data = {"version": None, "players": []}
-                self.mcs.close()
-
-            remove_users = []
-
-            for mcuser, data in self.sesame_open_for.items():
-
-                logger.info("checking: %s (%s)" % (mcuser, data["remote_addr"]))
-
-                user_is_player = False
-
-                for player in self.mcs_data["players"]:
-
-                    if mcuser == player.name:
-                        user_is_player = True
-                        break
-
-                if not user_is_player:
-
-                    data["timeout"] -= 1
-                    logger.info("user %s (%s) is not a player, timeout is now: %d" %
-                                (mcuser, data["remote_addr"], data["timeout"]))
-
-                    if data["timeout"] == 0:
-                        logger.info("user %s (%s) has timed out" % (mcuser, data["remote_addr"]))
-                        remove_users.append(mcuser)
-
-                else:
-
-                    logger.info("user with %s (%s) passed check!" % (mcuser, data["remote_addr"]))
-                    data["timeout"] = self.player_timeout
-
-            for mcuser in remove_users:
-                self.mcs.whitelist_del(mcuser)
-                self.mq.send_close(self.sesame_open_for[mcuser]["remote_addr"])
-                del self.sesame_open_for[mcuser]
-
-        self.mcs.close()
 
 if __name__ == "__main__":
 

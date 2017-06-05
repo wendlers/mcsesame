@@ -86,7 +86,6 @@ class App:
 
         login_user = App.LoginUser()
         login_user.id = login
-        login_user.mcuser = user.mcuser
         login_user.admin = user.admin
 
         return login_user
@@ -105,7 +104,6 @@ class App:
 
         login_user = App.LoginUser()
         login_user.id = login
-        login_user.mcuser = user.mcuser
         login_user.admin = user.admin
 
         return login_user
@@ -140,7 +138,6 @@ class App:
 
             login_user = App.LoginUser()
             login_user.id = login
-            login_user.mcuser = user.mcuser
             login_user.admin = user.admin
 
             flask_login.login_user(login_user)
@@ -152,7 +149,7 @@ class App:
     def logout(self):
 
         try:
-            self.gk.close_sesame_for(flask_login.current_user.mcuser)
+            self.gk.close_sesame_for(flask.request.remote_addr)
         except AttributeError:
             pass
 
@@ -163,13 +160,12 @@ class App:
     @flask_login.login_required
     def root(self):
 
-        self.gk.open_sesame_for(flask_login.current_user.mcuser, flask.request.remote_addr,
-                                flask_login.current_user.admin)
+        self.gk.open_sesame_for(flask.request.remote_addr)
 
         return render_template('root.html',
                                remote_addr=flask.request.remote_addr,
-                               mcs_data=self.gk.mcs_data,
-                               mcuser=flask_login.current_user.mcuser,
+                               login=flask_login.current_user.id,
+                               is_auth=True,
                                is_admin=flask_login.current_user.admin)
 
     @flask_login.login_required
@@ -198,7 +194,7 @@ class App:
         return render_template('passwd.html',
                                message=True,
                                login=flask_login.current_user.id,
-                               mcuser=flask_login.current_user.mcuser,
+                               is_auth=True,
                                is_admin=flask_login.current_user.admin,
                                success=success,
                                error=error)
@@ -231,14 +227,12 @@ class App:
                 new_user = persistence.User()
                 new_user.login = ""
                 new_user.passwd = ""
-                new_user.mcuser = ""
                 new_user.admin = 0
 
         else:
 
             login = flask.request.form["login"]
             password = flask.request.form["password"]
-            mcuser = flask.request.form["mcuser"]
 
             if "admin" in flask.request.form:
                 admin = 1
@@ -252,14 +246,11 @@ class App:
                 user = persistence.User()
                 user.login = login
                 user.passwd = pass2hash(password)
-                user.mcuser = mcuser
 
                 if len(login) == 0:
                     error = "Login muss angegeben werden!"
                 elif len(password) == 0:
                     error = "Passwort muss angegeben werden!"
-                elif len(mcuser) == 0:
-                    error = "MC user muss angegeben werden!"
                 else:
                     self.pm.add_user(user)
 
@@ -270,8 +261,6 @@ class App:
 
                 if len(password):
                     user.passwd = pass2hash(password)
-                if len(mcuser):
-                    user.mcuser = mcuser
 
             user.admin = admin
 
@@ -282,7 +271,7 @@ class App:
 
         return render_template('admin.html',
                                message=True,
-                               mcuser=flask_login.current_user.mcuser,
+                               is_auth=True,
                                is_admin=flask_login.current_user.admin,
                                users=users,
                                edit_user=edit_user,

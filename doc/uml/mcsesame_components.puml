@@ -7,13 +7,11 @@ package "Client" {
 
 package "Server" {
     package "craftbukkit" {
-        thrift - [SwiftApi]
         dst - [Server]
 
     }
     package "MCSesame" {
         https - [alibaba]
-        [alibaba] --> thrift
         [alibaba] --> mqueue
         mqueue - [sesame]
         [sesame] <<privileged>>

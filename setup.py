@@ -82,8 +82,7 @@ def createdb():
                 pm.add_user(persistence.User(
                     login=row[0],
                     passwd=pass2hash(row[1]),
-                    mcuser=row[2],
-                    admin=int(row[3])))
+                    admin=int(row[2])))
 
         print("Created users db")
 
@@ -110,10 +109,9 @@ setup(name='mcsesame',
           "Flask (>=0.12)",
           "Flask_Login (>=0.4.0)",
           "posix_ipc (>=1.0.0)",
-          "SQLAlchemy (>=1.1.5)",
-          "thrift (>=0.10.0)",
+          "SQLAlchemy (>=1.1.5)"
         ],
-      packages=['mcsesame', 'SwiftApi'],
+      packages=['mcsesame'],
       package_data={'mcsesame': ['templates/*', 'files/*']},
       scripts=['alibaba', 'sesame'],
       data_files=[(conf_dir, ['alibaba.ini', 'sesame.ini', 'users.db', 'ssl.crt', 'ssl.key'])]
