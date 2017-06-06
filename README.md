@@ -4,7 +4,7 @@ Protecting a public Minecraft server by requiring authentication through web-int
 Note, that there was a previous version which also talked to to Minecrat Server instance using
 the SwiftApi (allowing to monitor player stats etc.). But since the Swift stuff was very unstable
 for me, I dropped this. However, the mentioned version is archived in 
-[this](https://github.com/wendlers/mcsesame/tree/swift-to-mcserver) branch.
+[this](https://github.com/wendlers/mcsesame/tree/ipc-mcserver) branch.
 
 ## What does it do?
 
