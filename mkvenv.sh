@@ -20,6 +20,6 @@ virtualenv -p  ${PYTHON_BIN} ${VENV_DIR} || die "failed to create environment (e
 virtualenv --relocatable ${VENV_DIR}
 
 source ${VENV_DIR}/bin/activate || die "failed to activate environment (exiting)"
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 
 echo "Done, activate venv with 'source ${VENV_DIR}/bin/activate'"

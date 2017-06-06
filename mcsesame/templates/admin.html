@@ -5,11 +5,12 @@
       <img src='./files/mossy.png'/>
     </div>
     <div class="right">
-        <h1>Benutzerverwaltung</h1>
         {% if error %}
             <p style="color: red;">{{ error }}</p>
         {% endif %}
+        <h1>Benutzerverwaltung</h1>
         <form name="useredit" action="admin" method="POST">
+            <input type="hidden" name="target" id="target" value="us"/>
             <table>
                 <thead>
                     <td width="180" class="usertable">Login</td>
@@ -29,8 +30,8 @@
                         {% endif %}
                     </td>
                     <td>
-                        <a href="?l={{ u.login }}&a=dl">Löschen</a><br/>
-                        <a href="?l={{ u.login }}&a=ed">Bearbeiten</a>
+                        <a href="?t=us&l={{ u.login }}&a=dl">Löschen</a><br/>
+                        <a href="?t=us&l={{ u.login }}&a=ed">Bearbeiten</a>
                     </td>
                 </tr>
             {% endfor %}
@@ -52,7 +53,7 @@
             {% elif new_user %}
                 <tr class="editbox">
                     <td><input type="text" name="login" id="login" value="{{ new_user.login }}"/></td>
-                    <td><input type="password" name="password" id="password""/></td>
+                    <td><input type="password" name="password" id="password"/></td>
                     <td><input type="checkbox" name="admin" id="admin"
                                {%if new_user.admin %}checked{% endif %}/></td>
                     <td>
@@ -63,7 +64,40 @@
             </table>
             {% else %}
             </table>
-            <p><a href="?a=nw">Neuen Benutzer anlegen</a></p>
+            <p><a href="?t=us&a=nw">Neuen Benutzer anlegen</a></p>
+            {% endif %}
+        </form>
+        <h1>Aktive IP Adressen</h1>
+        <form name="addredit" action="admin" method="POST">
+            <input type="hidden" name="target" id="target" value="ip"/>
+            <table>
+                <thead>
+                    <td width="180" class="usertable">IP</td>
+                    <td width="180">Timeout (sec.)</td>
+                    <td width="100">Aktion</td>
+                </thead>
+                {% for a in addrs %}
+                    <tr>
+                        <td>{{a}}</td>
+                        <td>{{addrs[a].timeout * 10}}</td>
+                        <td>
+                            <a href="?t=ip&i={{a}}&a=dl">Entfernen</a><br/>
+                        </td>
+                    </tr>
+                {% endfor %}
+            {% if new_ip %}
+                <tr class="editbox">
+                    <td><input type="text" name="ip" id="ip" value="{{ new_ip.ip }}"/></td>
+                    <td><input type="text" name="timeout" id="timeout" value="{{ new_ip.timeout }}"/></td>
+                    <td>
+                        <a href="/admin">Abbrechen</a><br/>
+                        <a href="javascript:document.addredit.submit()">Hinzufügen</a>
+                    </td>
+                </tr>
+            </table>
+            {% else %}
+            </table>
+            <p><a href="?t=ip&a=nw">IP hinzufügen</a></p>
             {% endif %}
         </form>
     </div>

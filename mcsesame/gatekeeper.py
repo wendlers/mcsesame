@@ -21,13 +21,17 @@ class GateKeeper(threading.Thread):
         self.mq = ipc.MessageQueue()
         self.daemon = True
 
-    def open_sesame_for(self, remote_addr):
+    def open_sesame_for(self, remote_addr, timeout=None):
 
         if remote_addr not in self.sesame_open_for:
 
             self.mq.send_open(remote_addr)
 
-        self.sesame_open_for[remote_addr] = {"timeout": self.player_timeout}
+        if timeout is not None:
+            self.sesame_open_for[remote_addr] = {"timeout": timeout}
+        else:
+            self.sesame_open_for[remote_addr] = {"timeout": self.player_timeout}
+
         logger.info("opened sesame for: %s" % remote_addr)
 
     def close_sesame_for(self, remote_addr):

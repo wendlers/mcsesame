@@ -66,6 +66,7 @@ class App:
         self.app.add_url_rule("/logout", view_func=self.logout)
         self.app.add_url_rule("/admin", view_func=self.admin, methods=['GET', 'POST'])
         self.app.add_url_rule("/passwd", view_func=self.passwd, methods=['GET', 'POST'])
+        self.app.add_url_rule("/renew", view_func=self.renew)
         self.app.add_url_rule("/", view_func=self.root)
 
         self.app.add_url_rule("/files/<path:path>", view_func=self.files)
@@ -148,10 +149,15 @@ class App:
 
     def logout(self):
 
+        # we don't know if someone else from same IP is connected
+        # thus, the ip is not closed
+        # timeout will take care of that later
+        '''
         try:
             self.gk.close_sesame_for(flask.request.remote_addr)
         except AttributeError:
             pass
+        '''
 
         flask_login.logout_user()
 
@@ -167,6 +173,13 @@ class App:
                                login=flask_login.current_user.id,
                                is_auth=True,
                                is_admin=flask_login.current_user.admin)
+
+    @flask_login.login_required
+    def renew(self):
+
+        self.gk.open_sesame_for(flask.request.remote_addr)
+
+        return "OK"
 
     @flask_login.login_required
     def passwd(self):
@@ -209,63 +222,111 @@ class App:
 
         edit_user = None
         new_user = None
+        new_ip = None
 
         if flask.request.method == 'GET':
-            login = flask.request.args.get("l")
+
+            target = flask.request.args.get("t")
             action = flask.request.args.get("a")
 
-            if action == "ed":
+            if target == "us":
 
-                edit_user = self.pm.get_user(login)
+                login = flask.request.args.get("l")
 
-            elif action == "dl":
+                if action == "ed":
 
-                self.pm.del_user(self.pm.get_user(login))
+                    edit_user = self.pm.get_user(login)
 
-            elif action == "nw":
+                elif action == "dl":
 
-                new_user = persistence.User()
-                new_user.login = ""
-                new_user.passwd = ""
-                new_user.admin = 0
+                    self.pm.del_user(self.pm.get_user(login))
+
+                elif action == "nw":
+
+                    new_user = persistence.User()
+                    new_user.login = ""
+                    new_user.passwd = ""
+                    new_user.admin = 0
+
+            elif target == "ip":
+
+                if action == "dl":
+
+                    ip = flask.request.args.get("i")
+
+                    try:
+                        self.gk.close_sesame_for(ip)
+                    except AttributeError:
+                        pass
+
+                elif action == "nw":
+                    new_ip = {
+                    "ip": flask.request.remote_addr,
+                    "timeout": self.gk.player_timeout * 10}
 
         else:
 
-            login = flask.request.form["login"]
-            password = flask.request.form["password"]
+            target = flask.request.form["target"]
 
-            if "admin" in flask.request.form:
-                admin = 1
-            else:
-                admin = 0
+            if target == "us":
 
-            user = self.pm.get_user(login)
+                login = flask.request.form["login"]
+                password = flask.request.form["password"]
 
-            if user is None:
-
-                user = persistence.User()
-                user.login = login
-                user.passwd = pass2hash(password)
-
-                if len(login) == 0:
-                    error = "Login muss angegeben werden!"
-                elif len(password) == 0:
-                    error = "Passwort muss angegeben werden!"
+                if "admin" in flask.request.form:
+                    admin = 1
                 else:
-                    self.pm.add_user(user)
+                    admin = 0
 
-                if error:
-                    new_user = user
+                user = self.pm.get_user(login)
 
-            else:
+                if user is None:
 
-                if len(password):
+                    user = persistence.User()
+                    user.login = login
                     user.passwd = pass2hash(password)
 
-            user.admin = admin
+                    if len(login) == 0:
+                        error = "Login muss angegeben werden!"
+                    elif len(password) == 0:
+                        error = "Passwort muss angegeben werden!"
+                    else:
+                        self.pm.add_user(user)
 
-            if not error:
-                self.pm.commit()
+                    if error:
+                        new_user = user
+
+                else:
+
+                    if len(password):
+                        user.passwd = pass2hash(password)
+
+                user.admin = admin
+
+                if not error:
+                    self.pm.commit()
+
+            elif target == "ip":
+
+                ip = flask.request.form["ip"]
+                timeout = flask.request.form["timeout"]
+
+                if len(ip) == 0:
+                    error = "IP muss angegeben werden!"
+                elif len(timeout) == 0:
+                    error = "Timeout muss angegeben werden!"
+                else:
+                    try:
+                        timeout = int(timeout)
+                    except:
+                        error = "Timout muss eine Zahl sein!"
+
+                if error:
+                    new_ip = {
+                        "ip": ip,
+                        "timeout": timeout}
+                else:
+                    self.gk.open_sesame_for(ip, timeout // 10)
 
         users = self.pm.get_all_users()
 
@@ -274,8 +335,10 @@ class App:
                                is_auth=True,
                                is_admin=flask_login.current_user.admin,
                                users=users,
+                               addrs=self.gk.sesame_open_for,
                                edit_user=edit_user,
                                new_user=new_user,
+                               new_ip=new_ip,
                                error=error)
 
     def files(self, path):
@@ -337,7 +400,7 @@ def main():
     parser.add_argument("--user", help="User under which to run this app", default="mcserver")
 
     parser.add_argument("--playertimeout", help="Player inactivity timeout (will be multiplied by 10sec)",
-                        type=int, default=12)
+                        type=int, default=60)
 
     args = parser.parse_args()
 
